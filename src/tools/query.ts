@@ -3,12 +3,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { IpmClient } from '../ipm/client.js';
 import { buildQueryByAuthXml, buildQueryByNumberXml } from '../ipm/xml-builder.js';
 import { parseQueryResponse } from '../ipm/xml-parser.js';
+import { buildNfseFilename } from '../ipm/naming.js';
 import type { IpmConfig } from '../ipm/types.js';
 
 export function registerConsultarNfse(server: McpServer, client: IpmClient, config: IpmConfig): void {
   server.tool(
     'consultar_nfse',
-    'Consulta uma NFS-e por codigo de autenticidade OU por numero + serie. Fornecer codigo_autenticidade usa Modo A; fornecer numero + serie usa Modo B.',
+    'Consulta uma NFS-e por codigo de autenticidade OU por numero + serie. Salva XML e PDF localmente. Fornecer codigo_autenticidade usa Modo A; fornecer numero + serie usa Modo B.',
     {
       codigo_autenticidade: z.string().optional().describe('Modo A: codigo de autenticidade da NFS-e'),
       numero: z.string().optional().describe('Modo B: numero da NFS-e'),
@@ -31,8 +32,12 @@ export function registerConsultarNfse(server: McpServer, client: IpmClient, conf
         };
       }
 
-      const responseXml = await client.postXmlWithRetry(xml);
+      const responseXml = await client.postXmlWithRetry(xml, 'consultar');
       const result = parseQueryResponse(responseXml);
+
+      const xmlName = buildNfseFilename(result.numero_nfse, 'xml', result.data_emissao, result.tomador_nome);
+      result.xml_local = client.saveDocument(xmlName, responseXml) ?? undefined;
+
       return {
         content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
       };

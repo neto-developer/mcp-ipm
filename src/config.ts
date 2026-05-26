@@ -26,5 +26,7 @@ export function loadConfig(): IpmConfig {
     pdfUrl: process.env['NFSE_PDF_URL'] ?? deriveDefaultPdfUrl(baseUrl),
     testMode: process.env['NFSE_TEST_MODE'] === 'true',
     sslVerify: process.env['NFSE_SSL_VERIFY'] !== 'false',
+    debug: process.env['NFSE_DEBUG'] === 'true',
+    logDir: process.env['NFSE_LOG_DIR'] ?? './nfse-logs',
   };
 }

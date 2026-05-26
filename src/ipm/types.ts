@@ -7,6 +7,8 @@ export interface IpmConfig {
   pdfUrl: string;
   testMode: boolean;
   sslVerify: boolean;
+  debug: boolean;
+  logDir: string;
 }
 
 export interface Parcela {
@@ -112,13 +114,18 @@ export interface QueryResult {
   numero_nfse: string;
   serie_nfse: string;
   cod_verificador: string;
+  chave_acesso_nacional: string;
+  data_emissao: string;
+  hora_emissao: string;
   situacao: string;
   valor_total: string;
-  data_emissao: string;
+  valor_desconto: string;
   link_nfse: string;
+  tomador_nome: string;
+  tomador_cpfcnpj: string;
+  tomador_email: string;
+  discriminacao: string;
+  codigo_atividade: string;
+  xml_local?: string;
 }
 
-export interface PdfResult {
-  pdf_base64: string;
-  filename: string;
-}

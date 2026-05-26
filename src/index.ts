@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { loadConfig } from './config.js';
 import { IpmClient } from './ipm/client.js';
+import { IpmLogger } from './ipm/logger.js';
 import { registerEmitirNfse } from './tools/emit.js';
 import { registerCancelarNfse } from './tools/cancel.js';
 import { registerConsultarNfse } from './tools/query.js';
@@ -14,7 +15,8 @@ async function main(): Promise<void> {
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
   }
 
-  const client = new IpmClient(config);
+  const logger = config.logDir ? new IpmLogger(config.logDir) : null;
+  const client = new IpmClient(config, logger);
 
   const server = new McpServer({
     name: 'mcp-ipm',

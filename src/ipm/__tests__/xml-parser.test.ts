@@ -29,6 +29,20 @@ const errorXml = `<?xml version="1.0" encoding="ISO-8859-1"?>
   </mensagem>
 </retorno>`;
 
+const successQueryXml = `<?xml version="1.0" encoding="ISO-8859-1"?>
+<nfse>
+  <nf>
+    <numero_nfse>42</numero_nfse>
+    <serie_nfse>1</serie_nfse>
+    <cod_verificador_autenticidade>ABC123</cod_verificador_autenticidade>
+    <valor_total>1234,56</valor_total>
+    <data_nfse>01/01/2026</data_nfse>
+    <situacao_codigo_nfse>1</situacao_codigo_nfse>
+    <situacao_descricao_nfse>Emitida</situacao_descricao_nfse>
+    <link_nfse>https://ipm.link/42</link_nfse>
+  </nf>
+</nfse>`;
+
 const notFoundText = 'Nenhuma nota fiscal encontrada.';
 
 describe('parseEmitResponse', () => {
@@ -65,8 +79,9 @@ describe('parseQueryResponse', () => {
   });
 
   it('returns query result on success', () => {
-    const result = parseQueryResponse(successEmitXml);
+    const result = parseQueryResponse(successQueryXml);
     expect(result.numero_nfse).toBe('42');
     expect(result.cod_verificador).toBe('ABC123');
+    expect(result.situacao).toBe('Emitida');
   });
 });

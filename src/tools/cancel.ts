@@ -19,7 +19,7 @@ export function registerCancelarNfse(server: McpServer, client: IpmClient, confi
         { numero: params.numero, serie: params.serie, observacao: params.observacao },
         config,
       );
-      const responseXml = await client.postXmlWithRetry(xml);
+      const responseXml = await client.postXmlWithRetry(xml, 'cancelar');
       const result = parseCancelResponse(responseXml);
       return {
         content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
