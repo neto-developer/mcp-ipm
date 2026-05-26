@@ -43,9 +43,8 @@ function detectClients() {
 }
 
 function getClaudeSettingsPath() {
-  return platform() === 'win32'
-    ? join(process.env['APPDATA'] ?? homedir(), '.claude', 'settings.json')
-    : join(homedir(), '.claude', 'settings.json');
+  // Claude Code CLI uses ~/.claude/settings.json on all platforms
+  return join(homedir(), '.claude', 'settings.json');
 }
 
 function getOpenCodeConfigPath() {
@@ -55,22 +54,43 @@ function getOpenCodeConfigPath() {
   return join(base, 'opencode.json');
 }
 
+function claudeMcpCliAvailable() {
+  try { execSync('claude mcp --help', { stdio: 'pipe' }); return true; } catch { return false; }
+}
+
 function registerClaude(envFilePath) {
-  const settingsPath = getClaudeSettingsPath();
-  let settings = {};
-  if (existsSync(settingsPath)) {
-    try { settings = JSON.parse(readFileSync(settingsPath, 'utf8')); } catch {}
+  if (!FORCE) {
+    try {
+      const list = execSync('claude mcp list', { stdio: 'pipe' }).toString();
+      if (list.includes('mcp-ipm')) {
+        console.log('  Claude Code: mcp-ipm already registered (use --force to overwrite)');
+        return;
+      }
+    } catch {}
   }
-  settings.mcpServers = settings.mcpServers ?? {};
-  if (settings.mcpServers['mcp-ipm'] && !FORCE) {
-    console.log('  Claude Code: mcp-ipm already registered (use --force to overwrite)');
+
+  if (DRY_RUN) {
+    console.log(`  [dry-run] claude mcp add mcp-ipm -- docker run -i --rm --env-file "${envFilePath}" ${IMAGE}`);
     return;
   }
-  settings.mcpServers['mcp-ipm'] = {
-    command: 'docker',
-    args: ['run', '-i', '--rm', '--env-file', envFilePath, IMAGE],
-  };
-  if (!DRY_RUN) {
+
+  if (claudeMcpCliAvailable()) {
+    execSync(
+      `claude mcp add mcp-ipm -- docker run -i --rm --env-file "${envFilePath}" ${IMAGE}`,
+      { stdio: 'inherit' }
+    );
+  } else {
+    // Fallback: edit settings.json directly
+    const settingsPath = getClaudeSettingsPath();
+    let settings = {};
+    if (existsSync(settingsPath)) {
+      try { settings = JSON.parse(readFileSync(settingsPath, 'utf8')); } catch {}
+    }
+    settings.mcpServers = settings.mcpServers ?? {};
+    settings.mcpServers['mcp-ipm'] = {
+      command: 'docker',
+      args: ['run', '-i', '--rm', '--env-file', envFilePath, IMAGE],
+    };
     mkdirSync(join(settingsPath, '..'), { recursive: true });
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
   }
@@ -78,6 +98,12 @@ function registerClaude(envFilePath) {
 }
 
 function unregisterClaude() {
+  try {
+    execSync('claude mcp remove mcp-ipm', { stdio: 'inherit' });
+    console.log('  Claude Code: mcp-ipm removed');
+    return;
+  } catch {}
+  // Fallback: edit settings.json directly
   const settingsPath = getClaudeSettingsPath();
   if (!existsSync(settingsPath)) return;
   let settings = {};
@@ -140,9 +166,14 @@ async function main() {
   try { execSync('docker info', { stdio: 'pipe' }); }
   catch { console.error('Docker not running or not installed. Install at https://docker.com'); process.exit(1); }
 
-  // 2. Pull image
+  // 2. Pull image (best-effort - image may not be published yet)
   console.log(`Pulling ${IMAGE}...`);
-  run(`docker pull ${IMAGE}`);
+  try {
+    run(`docker pull ${IMAGE}`);
+  } catch {
+    console.log(`  Warning: could not pull ${IMAGE} (image may not be published yet).`);
+    console.log('  The MCP will work once the image is available on GHCR.');
+  }
 
   // 3. Detect clients
   const clients = detectClients();
