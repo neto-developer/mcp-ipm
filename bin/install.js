@@ -73,13 +73,13 @@ function registerClaude(envFilePath) {
   if (!DRY_RUN) mkdirSync(LOGS_DIR, { recursive: true });
 
   if (DRY_RUN) {
-    console.log(`  [dry-run] claude mcp add mcp-ipm -- docker run -i --rm --env-file "${envFilePath}" -v "${LOGS_DIR}:/app/nfse-logs" ${IMAGE}`);
+    console.log(`  [dry-run] claude mcp add mcp-ipm -- docker run --pull=always -i --rm --env-file "${envFilePath}" -v "${LOGS_DIR}:/app/nfse-logs" ${IMAGE}`);
     return;
   }
 
   if (claudeMcpCliAvailable()) {
     execSync(
-      `claude mcp add mcp-ipm -- docker run -i --rm --env-file "${envFilePath}" -v "${LOGS_DIR}:/app/nfse-logs" ${IMAGE}`,
+      `claude mcp add mcp-ipm -- docker run --pull=always -i --rm --env-file "${envFilePath}" -v "${LOGS_DIR}:/app/nfse-logs" ${IMAGE}`,
       { stdio: 'inherit' }
     );
   } else {
@@ -92,7 +92,7 @@ function registerClaude(envFilePath) {
     settings.mcpServers = settings.mcpServers ?? {};
     settings.mcpServers['mcp-ipm'] = {
       command: 'docker',
-      args: ['run', '-i', '--rm', '--env-file', envFilePath, '-v', `${LOGS_DIR}:/app/nfse-logs`, IMAGE],
+      args: ['run', '--pull=always', '-i', '--rm', '--env-file', envFilePath, '-v', `${LOGS_DIR}:/app/nfse-logs`, IMAGE],
     };
     mkdirSync(join(settingsPath, '..'), { recursive: true });
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
