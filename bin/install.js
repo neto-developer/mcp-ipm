@@ -183,32 +183,29 @@ async function main() {
     process.exit(0);
   }
 
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-
-  // 4. Select clients
+  // 4. Show detected clients (install in all, no prompt)
   console.log('\nDetected MCP clients:');
-  clients.forEach((c, i) => console.log(`  [${i + 1}] ${c.label}`));
-  console.log('  [a] all');
-  console.log('  [q] quit');
+  const selected = ONLY ? clients.filter(c => c.id === ONLY) : clients;
+  selected.forEach(c => console.log(`  - ${c.label}`));
 
-  let selected = clients;
-  if (!ONLY) {
-    const answer = await ask(rl, '\nSelect clients (comma-separated numbers, or a)', 'a');
-    if (answer === 'q') { rl.close(); return; }
-    if (answer !== 'a') {
-      const nums = answer.split(/[,\s]+/).map(n => parseInt(n, 10) - 1);
-      selected = nums.filter(i => i >= 0 && i < clients.length).map(i => clients[i]);
-    }
+  // 5. Load existing .env as defaults
+  const existing = {};
+  if (existsSync(ENV_FILE)) {
+    readFileSync(ENV_FILE, 'utf8').split('\n').forEach(line => {
+      const [k, ...v] = line.split('=');
+      if (k && v.length) existing[k.trim()] = v.join('=').trim();
+    });
+    console.log(`\nFound existing credentials at ${ENV_FILE} (press Enter to keep):`);
   } else {
-    selected = clients.filter(c => c.id === ONLY);
+    console.log('\nCredentials (stored in ' + ENV_FILE + '):');
   }
 
-  // 5. Collect credentials
-  console.log('\nCredentials (stored in ' + ENV_FILE + '):\n');
-  const user = await ask(rl, 'NFSE_USER (CPF/CNPJ somente digitos)', '');
-  const pass = await ask(rl, 'NFSE_PASS (senha IPM)', '');
-  const cadastro = await ask(rl, 'NFSE_CADASTRO (codigo cadastro prestador)', '');
-  const cidade = await ask(rl, 'NFSE_CIDADE (codigo TOM, Ibirama/SC = 8135)', '8135');
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+
+  const user = await ask(rl, 'NFSE_USER (CPF/CNPJ somente digitos)', existing['NFSE_USER'] ?? '');
+  const pass = await ask(rl, 'NFSE_PASS (senha IPM)', existing['NFSE_PASS'] ?? '');
+  const cadastro = await ask(rl, 'NFSE_CADASTRO (codigo cadastro prestador)', existing['NFSE_CADASTRO'] ?? '');
+  const cidade = await ask(rl, 'NFSE_CIDADE (codigo TOM, Ibirama/SC = 8135)', existing['NFSE_CIDADE'] ?? '8135');
   rl.close();
 
   // 6. Save .env
