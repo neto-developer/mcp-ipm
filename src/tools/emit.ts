@@ -73,7 +73,7 @@ export function registerEmitirNfse(server: McpServer, client: IpmClient, config:
     emitirNfseSchema,
     async (params) => {
       const xml = buildEmitXml(params as Parameters<typeof buildEmitXml>[0], config);
-      const responseXml = await client.postXmlWithRetry(xml);
+      const responseXml = await client.postXmlWithRetry(xml, 'emitir');
       const result = parseEmitResponse(responseXml);
       return {
         content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],

@@ -18,6 +18,7 @@ const CONFIG_DIR = platform() === 'win32'
   ? join(process.env['APPDATA'] ?? homedir(), 'mcp-ipm')
   : join(homedir(), '.config', 'mcp-ipm');
 const ENV_FILE = join(CONFIG_DIR, '.env');
+const LOGS_DIR = join(CONFIG_DIR, 'logs');
 
 function run(cmd) {
   if (DRY_RUN) { console.log(`  [dry-run] ${cmd}`); return; }
@@ -69,14 +70,16 @@ function registerClaude(envFilePath) {
     } catch {}
   }
 
+  if (!DRY_RUN) mkdirSync(LOGS_DIR, { recursive: true });
+
   if (DRY_RUN) {
-    console.log(`  [dry-run] claude mcp add mcp-ipm -- docker run -i --rm --env-file "${envFilePath}" ${IMAGE}`);
+    console.log(`  [dry-run] claude mcp add mcp-ipm -- docker run -i --rm --env-file "${envFilePath}" -v "${LOGS_DIR}:/app/nfse-logs" ${IMAGE}`);
     return;
   }
 
   if (claudeMcpCliAvailable()) {
     execSync(
-      `claude mcp add mcp-ipm -- docker run -i --rm --env-file "${envFilePath}" ${IMAGE}`,
+      `claude mcp add mcp-ipm -- docker run -i --rm --env-file "${envFilePath}" -v "${LOGS_DIR}:/app/nfse-logs" ${IMAGE}`,
       { stdio: 'inherit' }
     );
   } else {
@@ -89,7 +92,7 @@ function registerClaude(envFilePath) {
     settings.mcpServers = settings.mcpServers ?? {};
     settings.mcpServers['mcp-ipm'] = {
       command: 'docker',
-      args: ['run', '-i', '--rm', '--env-file', envFilePath, IMAGE],
+      args: ['run', '-i', '--rm', '--env-file', envFilePath, '-v', `${LOGS_DIR}:/app/nfse-logs`, IMAGE],
     };
     mkdirSync(join(settingsPath, '..'), { recursive: true });
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
@@ -125,9 +128,10 @@ function registerOpenCode(envFilePath) {
     console.log('  OpenCode: mcp-ipm already registered (use --force to overwrite)');
     return;
   }
+  if (!DRY_RUN) mkdirSync(LOGS_DIR, { recursive: true });
   cfg.mcp['mcp-ipm'] = {
     command: 'docker',
-    args: ['run', '-i', '--rm', '--env-file', envFilePath, IMAGE],
+    args: ['run', '-i', '--rm', '--env-file', envFilePath, '-v', `${LOGS_DIR}:/app/nfse-logs`, IMAGE],
   };
   if (!DRY_RUN) {
     mkdirSync(join(cfgPath, '..'), { recursive: true });
