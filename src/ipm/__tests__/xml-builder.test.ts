@@ -11,6 +11,8 @@ const baseConfig = {
   pdfUrl: '',
   testMode: false,
   sslVerify: true,
+  debug: false,
+  logDir: '',
 };
 
 const minimalEmit: EmitInput = {
