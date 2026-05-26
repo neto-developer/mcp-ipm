@@ -7,10 +7,13 @@ if ($nodeVer -lt $MIN_NODE) {
     exit 1
 }
 
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$localInstaller = Join-Path $scriptDir "bin\install.js"
+$localInstaller = $null
+if ($MyInvocation.MyCommand.Path) {
+    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $localInstaller = Join-Path $scriptDir "bin\install.js"
+}
 
-if (Test-Path $localInstaller) {
+if ($localInstaller -and (Test-Path $localInstaller)) {
     node $localInstaller @args
 } else {
     npx -y "github:neto-developer/mcp-ipm" @args

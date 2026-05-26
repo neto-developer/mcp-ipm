@@ -1,9 +1,12 @@
 name: Docker Publish
 
 on:
-  push:
-    branches: [main]
-    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Image tag (ex: v1.0.0 or latest)'
+        required: false
+        default: 'latest'
 
 env:
   REGISTRY: ghcr.io
