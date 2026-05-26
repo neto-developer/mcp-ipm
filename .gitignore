@@ -6,4 +6,5 @@ dist/
 bucket/
 nfse-logs/
 .idea/
-*.pdf
+/*.pdf
+/docs/superpowers/
