@@ -31,6 +31,8 @@ O script detecta e configura automaticamente Claude Code, OpenCode e Codex.
 | `NFSE_PDF_URL` | nao | URL customizada do servico PDF |
 | `NFSE_TEST_MODE` | nao | `true` para modo teste (nao registra oficialmente) |
 | `NFSE_SSL_VERIFY` | nao | `false` desabilita verificacao SSL |
+| `NFSE_LOG_DIR` | nao | Diretorio de logs e downloads (default: `./nfse-logs`) |
+| `NFSE_DEBUG` | nao | `true` loga XML e HTTP no stderr |
 
 ## Ferramentas
 
@@ -54,20 +56,20 @@ Cancela uma NFS-e emitida.
 
 ### `consultar_nfse`
 
-Consulta uma NFS-e por codigo de autenticidade ou por numero+serie.
+Consulta uma NFS-e por codigo de autenticidade ou por numero+serie. Salva o XML da nota localmente.
 
 **Modo A:** `codigo_autenticidade`
 **Modo B:** `numero` + `serie` (default: "1")
 
-**Retorna:** dados completos da NFS-e
+**Retorna:** `{ numero_nfse, serie_nfse, cod_verificador, chave_acesso_nacional, data_emissao, hora_emissao, situacao, valor_total, valor_desconto, link_nfse, tomador_nome, tomador_cpfcnpj, tomador_email, discriminacao, codigo_atividade, xml_local }`
 
 ### `download_pdf`
 
-Faz download do PDF da NFS-e em base64.
+Faz download do PDF da NFS-e e salva localmente. Realiza uma consulta interna para nomear o arquivo corretamente.
 
 **Obrigatorios:** `numero`
 
-**Retorna:** `{ pdf_base64, filename }`
+**Retorna:** `{ pdf_local }` com caminho absoluto do arquivo salvo
 
 ## Desenvolvimento local
 
@@ -82,6 +84,6 @@ npm run dev
 
 ## Documentacao tecnica
 
-- [NTE-35/2021 v2.8](docs/) - Spec principal NFS-e IPM
-- [NTE-122/2025 v1.5](docs/) - Extensao Reforma Tributaria (IBS/CBS)
-- [NTI-79/2026 v1.0](docs/) - Download PDF via WNERestPDFNFSe
+- [NTE-35/2021 v2.8](docs/NTE-35-2021-v2.8-Integracao-NFSe-IPM.pdf) - Spec principal NFS-e IPM
+- [NTE-122/2025 v1.5](docs/NTE-122-2025-v1.5-Reforma-Tributaria-IBS-CBS.pdf) - Extensao Reforma Tributaria (IBS/CBS)
+- [NTI-79/2026 v1.0](docs/NTI-79-2026-v1.0-Download-PDF-NFSe.pdf) - Download PDF via WNERestPDFNFSe
