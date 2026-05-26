@@ -1,0 +1,6 @@
+services:
+  mcp-ipm:
+    build: .
+    env_file: .env
+    stdin_open: true
+    tty: true
