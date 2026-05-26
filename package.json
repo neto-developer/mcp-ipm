@@ -4,6 +4,9 @@
   "description": "MCP server for IPM Atende.Net NFS-e operations",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "mcp-ipm": "bin/install.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
