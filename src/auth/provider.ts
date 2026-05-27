@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Response } from 'express';
 import type { OAuthServerProvider } from '@modelcontextprotocol/sdk/server/auth/provider.js';
 import type { OAuthRegisteredClientsStore } from '@modelcontextprotocol/sdk/server/auth/clients.js';
@@ -23,6 +25,26 @@ export class SimpleMcpOAuthProvider implements OAuthServerProvider {
   private readonly _codes = new Map<string, PendingCode>();
   private readonly _accessTokens = new Map<string, StoredToken>();
   private readonly _refreshTokens = new Map<string, StoredToken>();
+  private readonly _clientsFile: string | null;
+
+  constructor(dataDir?: string) {
+    this._clientsFile = dataDir ? join(dataDir, 'oauth-clients.json') : null;
+    if (this._clientsFile) {
+      mkdirSync(dataDir!, { recursive: true });
+      try {
+        const raw = JSON.parse(readFileSync(this._clientsFile, 'utf8'));
+        for (const [id, client] of Object.entries(raw)) {
+          this._clients.set(id, client as OAuthClientInformationFull);
+        }
+        console.error(`[oauth] loaded ${this._clients.size} client(s) from disk`);
+      } catch { /* file doesn't exist yet */ }
+    }
+  }
+
+  private _persistClients(): void {
+    if (!this._clientsFile) return;
+    writeFileSync(this._clientsFile, JSON.stringify(Object.fromEntries(this._clients), null, 2));
+  }
 
   readonly clientsStore: OAuthRegisteredClientsStore = {
     getClient: (clientId) => this._clients.get(clientId),
@@ -33,6 +55,8 @@ export class SimpleMcpOAuthProvider implements OAuthServerProvider {
         client_id_issued_at: Math.floor(Date.now() / 1000),
       };
       this._clients.set(full.client_id, full);
+      this._persistClients();
+      console.error(`[oauth] registered client ${full.client_id.slice(0, 8)}... (${full.client_name ?? 'unnamed'})`);
       return full;
     },
   };

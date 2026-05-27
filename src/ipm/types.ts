@@ -12,6 +12,7 @@ export interface IpmConfig {
   httpPort?: number;
   httpToken?: string;
   externalUrl?: string;
+  dataDir?: string;
 }
 
 export interface Parcela {

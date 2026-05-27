@@ -50,7 +50,7 @@ async function main(): Promise<void> {
     if (config.externalUrl) {
       // OAuth 2.1 mode — required for Claude.ai remote MCP
       const issuerUrl = new URL(config.externalUrl);
-      const oauthProvider = new SimpleMcpOAuthProvider();
+      const oauthProvider = new SimpleMcpOAuthProvider(config.dataDir);
 
       app.use(mcpAuthRouter({ provider: oauthProvider, issuerUrl }));
 

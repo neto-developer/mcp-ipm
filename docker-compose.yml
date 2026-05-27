@@ -3,8 +3,13 @@ services:
     image: ghcr.io/neto-developer/mcp-ipm:latest
     build: .
     env_file: .env
+    volumes:
+      - mcp-data:/app/mcp-data
     networks:
       - argonsolar-network
+
+volumes:
+  mcp-data:
 
 networks:
   argonsolar-network:
