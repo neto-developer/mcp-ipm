@@ -4,6 +4,8 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js';
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import express, { type Request, type Response, type NextFunction } from 'express';
+import { join } from 'node:path';
+import { mkdirSync } from 'node:fs';
 import { loadConfig } from './config.js';
 import { IpmClient } from './ipm/client.js';
 import { IpmLogger } from './ipm/logger.js';
@@ -51,6 +53,10 @@ async function main(): Promise<void> {
       // OAuth 2.1 mode — required for Claude.ai remote MCP
       const issuerUrl = new URL(config.externalUrl);
       const oauthProvider = new SimpleMcpOAuthProvider(config.dataDir);
+
+      const downloadsDir = join(config.dataDir!, 'downloads');
+      mkdirSync(downloadsDir, { recursive: true });
+      app.use('/downloads', express.static(downloadsDir));
 
       app.use(mcpAuthRouter({
         provider: oauthProvider,

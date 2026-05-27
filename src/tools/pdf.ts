@@ -1,3 +1,5 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { IpmClient } from '../ipm/client.js';
@@ -9,7 +11,7 @@ import type { IpmConfig } from '../ipm/types.js';
 export function registerDownloadPdf(server: McpServer, client: IpmClient, config: IpmConfig): void {
   server.tool(
     'download_pdf',
-    'Faz download do PDF de uma NFS-e e salva localmente. Retorna o caminho do arquivo.',
+    'Faz download do PDF de uma NFS-e. Em modo HTTP retorna link público para download; em modo local retorna o caminho do arquivo.',
     {
       numero: z.string().min(1).describe('Numero da NFS-e'),
       serie: z.string().optional().describe('Serie da NFS-e (default: 1)'),
@@ -17,7 +19,6 @@ export function registerDownloadPdf(server: McpServer, client: IpmClient, config
       serie_tipo: z.string().optional().describe('Tipo da serie para o servico PDF'),
     },
     async (params) => {
-      // Query metadata for correct file naming
       let tomadorNome: string | undefined;
       let dataEmissao: string | undefined;
       try {
@@ -39,6 +40,17 @@ export function registerDownloadPdf(server: McpServer, client: IpmClient, config
 
       const pdfBuffer = await client.postJson(body, `nfse_${params.numero}`);
       const filename = buildNfseFilename(params.numero, 'pdf', dataEmissao, tomadorNome);
+
+      if (config.externalUrl && config.dataDir) {
+        const downloadsDir = join(config.dataDir, 'downloads');
+        mkdirSync(downloadsDir, { recursive: true });
+        writeFileSync(join(downloadsDir, filename), pdfBuffer);
+        const pdf_url = `${config.externalUrl}/downloads/${encodeURIComponent(filename)}`;
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ pdf_url, pdf_filename: filename }, null, 2) }],
+        };
+      }
+
       const pdf_local = client.saveDocument(filename, pdfBuffer) ?? filename;
       return {
         content: [{ type: 'text', text: JSON.stringify({ pdf_local }, null, 2) }],
