@@ -13,6 +13,7 @@ export interface IpmConfig {
   httpToken?: string;
   externalUrl?: string;
   dataDir?: string;
+  authPin?: string;
 }
 
 export interface Parcela {

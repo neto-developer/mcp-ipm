@@ -34,5 +34,6 @@ export function loadConfig(): IpmConfig {
     httpToken: process.env['MCP_HTTP_TOKEN'] || undefined,
     externalUrl: process.env['MCP_EXTERNAL_URL'] || undefined,
     dataDir: process.env['MCP_DATA_DIR'] || './mcp-data',
+    authPin: process.env['MCP_AUTH_PIN'] || undefined,
   };
 }

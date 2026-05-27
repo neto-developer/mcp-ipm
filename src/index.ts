@@ -16,6 +16,10 @@ import { registerDownloadPdf } from './tools/pdf.js';
 import { SimpleMcpOAuthProvider } from './auth/provider.js';
 import type { IpmConfig } from './ipm/types.js';
 
+function htmlEscape(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function buildServer(client: IpmClient, logger: IpmLogger | null, config: IpmConfig): McpServer {
   const server = new McpServer({ name: 'mcp-ipm', version: '1.0.0' });
   registerEmitirNfse(server, client, config);
@@ -57,6 +61,36 @@ async function main(): Promise<void> {
       const downloadsDir = join(config.dataDir!, 'downloads');
       mkdirSync(downloadsDir, { recursive: true });
       app.use('/downloads', express.static(downloadsDir));
+
+      if (config.authPin) {
+        const pin = config.authPin;
+        app.get('/authorize', (req: Request, res: Response, next: NextFunction) => {
+          if (req.query['pin'] === pin) { next(); return; }
+          const q = { ...req.query } as Record<string, string>;
+          delete q['pin'];
+          const hidden = Object.entries(q)
+            .map(([k, v]) => `<input type="hidden" name="${htmlEscape(k)}" value="${htmlEscape(v)}">`)
+            .join('');
+          const wrongPin = 'pin' in req.query;
+          res.send(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>mcp-ipm — PIN</title>
+<style>body{font-family:system-ui,sans-serif;max-width:360px;margin:80px auto;padding:0 16px;text-align:center}
+input[type=password]{display:block;width:100%;padding:10px;margin:16px 0;font-size:16px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
+button{padding:10px 28px;background:#0070f3;color:#fff;border:none;border-radius:6px;font-size:15px;cursor:pointer}
+.err{color:#c00;margin-bottom:8px;font-size:14px}</style>
+</head>
+<body>
+<h2>mcp-ipm</h2>
+<p>Digite o PIN para autorizar acesso.</p>
+${wrongPin ? '<p class="err">PIN incorreto.</p>' : ''}
+<form method="GET" action="/authorize">${hidden}
+  <input type="password" name="pin" autofocus placeholder="PIN">
+  <button type="submit">Entrar</button>
+</form>
+</body></html>`);
+        });
+      }
 
       app.use(mcpAuthRouter({
         provider: oauthProvider,
