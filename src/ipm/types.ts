@@ -9,6 +9,8 @@ export interface IpmConfig {
   sslVerify: boolean;
   debug: boolean;
   logDir: string;
+  httpPort?: number;
+  httpToken?: string;
 }
 
 export interface Parcela {

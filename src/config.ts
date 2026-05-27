@@ -17,6 +17,8 @@ export function loadConfig(): IpmConfig {
 
   const baseUrl = process.env['NFSE_BASE_URL'] ?? DEFAULT_BASE_URL;
 
+  const httpPortRaw = process.env['MCP_HTTP_PORT'];
+
   return {
     user: process.env['NFSE_USER']!,
     pass: process.env['NFSE_PASS']!,
@@ -28,5 +30,7 @@ export function loadConfig(): IpmConfig {
     sslVerify: process.env['NFSE_SSL_VERIFY'] !== 'false',
     debug: process.env['NFSE_DEBUG'] === 'true',
     logDir: process.env['NFSE_LOG_DIR'] ?? './nfse-logs',
+    httpPort: httpPortRaw ? parseInt(httpPortRaw, 10) : undefined,
+    httpToken: process.env['MCP_HTTP_TOKEN'] || undefined,
   };
 }
