@@ -1,5 +1,6 @@
 services:
   mcp-ipm:
+    image: ghcr.io/neto-developer/mcp-ipm:latest
     build: .
     env_file: .env
     stdin_open: true
