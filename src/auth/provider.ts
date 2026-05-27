@@ -135,7 +135,7 @@ export class SimpleMcpOAuthProvider implements OAuthServerProvider {
     this._accessTokens.set(accessToken, { clientId, expiresAt: Date.now() + expiresIn * 1000 });
     this._refreshTokens.set(refreshToken, { clientId, expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000 });
 
-    return { access_token: accessToken, token_type: 'bearer', expires_in: expiresIn, refresh_token: refreshToken };
+    return { access_token: accessToken, token_type: 'Bearer', expires_in: expiresIn, refresh_token: refreshToken };
   }
 }
 

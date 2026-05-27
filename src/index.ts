@@ -37,6 +37,13 @@ async function main(): Promise<void> {
     const app = express();
     app.set('trust proxy', 1);
     app.use(express.json());
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      const start = Date.now();
+      res.on('finish', () => {
+        console.error(`${req.method} ${req.path} ${res.statusCode} ${Date.now() - start}ms`);
+      });
+      next();
+    });
 
     if (config.externalUrl) {
       // OAuth 2.1 mode — required for Claude.ai remote MCP
