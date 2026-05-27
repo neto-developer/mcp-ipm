@@ -52,7 +52,12 @@ async function main(): Promise<void> {
       const issuerUrl = new URL(config.externalUrl);
       const oauthProvider = new SimpleMcpOAuthProvider(config.dataDir);
 
-      app.use(mcpAuthRouter({ provider: oauthProvider, issuerUrl }));
+      app.use(mcpAuthRouter({
+        provider: oauthProvider,
+        issuerUrl,
+        resourceServerUrl: new URL(`${config.externalUrl}/mcp`),
+        resourceName: 'mcp-ipm',
+      }));
 
       const bearerAuth = requireBearerAuth({ verifier: oauthProvider });
 
