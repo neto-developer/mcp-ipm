@@ -116,6 +116,7 @@ export class SimpleMcpOAuthProvider implements OAuthServerProvider {
 
   async verifyAccessToken(token: string): Promise<AuthInfo> {
     const stored = this._accessTokens.get(token);
+    console.error(`[oauth] verifyToken ${token.slice(0, 8)}... found=${!!stored} storeSize=${this._accessTokens.size}`);
     if (!stored || stored.expiresAt < Date.now()) {
       throw new Error('Invalid or expired access token');
     }
@@ -135,6 +136,7 @@ export class SimpleMcpOAuthProvider implements OAuthServerProvider {
     this._accessTokens.set(accessToken, { clientId, expiresAt: Date.now() + expiresIn * 1000 });
     this._refreshTokens.set(refreshToken, { clientId, expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000 });
 
+    console.error(`[oauth] issued token ${accessToken.slice(0, 8)}... for client ${clientId.slice(0, 8)}... (store size: ${this._accessTokens.size})`);
     return { access_token: accessToken, token_type: 'Bearer', expires_in: expiresIn, refresh_token: refreshToken };
   }
 }

@@ -40,7 +40,9 @@ async function main(): Promise<void> {
     app.use((req: Request, res: Response, next: NextFunction) => {
       const start = Date.now();
       res.on('finish', () => {
-        console.error(`${req.method} ${req.path} ${res.statusCode} ${Date.now() - start}ms`);
+        const auth = req.headers['authorization'];
+        const authTag = auth ? ` auth=${auth.slice(0, 14)}...` : ' no-auth';
+        console.error(`${req.method} ${req.url} ${res.statusCode} ${Date.now() - start}ms${authTag}`);
       });
       next();
     });
