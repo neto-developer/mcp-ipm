@@ -144,7 +144,7 @@ export class SimpleMcpOAuthProvider implements OAuthServerProvider {
     if (!stored || stored.expiresAt < Date.now()) {
       throw new Error('Invalid or expired access token');
     }
-    return { token, clientId: stored.clientId, scopes: [] };
+    return { token, clientId: stored.clientId, scopes: [], expiresAt: Math.floor(stored.expiresAt / 1000) };
   }
 
   async revokeToken(_client: OAuthClientInformationFull, request: OAuthTokenRevocationRequest): Promise<void> {
