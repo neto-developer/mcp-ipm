@@ -32,5 +32,6 @@ export function loadConfig(): IpmConfig {
     logDir: process.env['NFSE_LOG_DIR'] ?? './nfse-logs',
     httpPort: httpPortRaw ? parseInt(httpPortRaw, 10) : undefined,
     httpToken: process.env['MCP_HTTP_TOKEN'] || undefined,
+    externalUrl: process.env['MCP_EXTERNAL_URL'] || undefined,
   };
 }

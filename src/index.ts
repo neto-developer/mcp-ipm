@@ -1,6 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js';
+import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import express, { type Request, type Response, type NextFunction } from 'express';
 import { loadConfig } from './config.js';
 import { IpmClient } from './ipm/client.js';
@@ -9,6 +11,7 @@ import { registerEmitirNfse } from './tools/emit.js';
 import { registerCancelarNfse } from './tools/cancel.js';
 import { registerConsultarNfse } from './tools/query.js';
 import { registerDownloadPdf } from './tools/pdf.js';
+import { SimpleMcpOAuthProvider } from './auth/provider.js';
 import type { IpmConfig } from './ipm/types.js';
 
 function buildServer(client: IpmClient, logger: IpmLogger | null, config: IpmConfig): McpServer {
@@ -34,7 +37,34 @@ async function main(): Promise<void> {
     const app = express();
     app.use(express.json());
 
-    if (config.httpToken) {
+    if (config.externalUrl) {
+      // OAuth 2.1 mode — required for Claude.ai remote MCP
+      const issuerUrl = new URL(config.externalUrl);
+      const oauthProvider = new SimpleMcpOAuthProvider();
+
+      app.use(mcpAuthRouter({ provider: oauthProvider, issuerUrl }));
+
+      const bearerAuth = requireBearerAuth({ verifier: oauthProvider });
+
+      app.post('/mcp', bearerAuth, async (req: Request, res: Response) => {
+        const server = buildServer(client, logger, config);
+        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+        res.on('finish', () => { transport.close().catch(() => {}); });
+        await server.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+      });
+
+      app.get('/mcp', bearerAuth, async (req: Request, res: Response) => {
+        const server = buildServer(client, logger, config);
+        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+        res.on('finish', () => { transport.close().catch(() => {}); });
+        await server.connect(transport);
+        await transport.handleRequest(req, res);
+      });
+
+      console.error(`mcp-ipm HTTP listening on :${config.httpPort} (OAuth — issuer: ${issuerUrl})`);
+    } else if (config.httpToken) {
+      // Simple Bearer token mode
       const token = config.httpToken;
       app.use((_req: Request, res: Response, next: NextFunction) => {
         const auth = _req.headers['authorization'];
@@ -44,29 +74,48 @@ async function main(): Promise<void> {
         }
         next();
       });
+
+      app.post('/mcp', async (req: Request, res: Response) => {
+        const server = buildServer(client, logger, config);
+        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+        res.on('finish', () => { transport.close().catch(() => {}); });
+        await server.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+      });
+
+      app.get('/mcp', async (req: Request, res: Response) => {
+        const server = buildServer(client, logger, config);
+        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+        res.on('finish', () => { transport.close().catch(() => {}); });
+        await server.connect(transport);
+        await transport.handleRequest(req, res);
+      });
+
+      console.error(`mcp-ipm HTTP listening on :${config.httpPort} (Bearer token)`);
+    } else {
+      // No auth
+      app.post('/mcp', async (req: Request, res: Response) => {
+        const server = buildServer(client, logger, config);
+        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+        res.on('finish', () => { transport.close().catch(() => {}); });
+        await server.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+      });
+
+      app.get('/mcp', async (req: Request, res: Response) => {
+        const server = buildServer(client, logger, config);
+        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+        res.on('finish', () => { transport.close().catch(() => {}); });
+        await server.connect(transport);
+        await transport.handleRequest(req, res);
+      });
+
+      console.error(`mcp-ipm HTTP listening on :${config.httpPort} (no auth)`);
     }
 
-    app.post('/mcp', async (req: Request, res: Response) => {
-      const server = buildServer(client, logger, config);
-      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-      res.on('finish', () => { transport.close().catch(() => {}); });
-      await server.connect(transport);
-      await transport.handleRequest(req, res, req.body);
-    });
-
-    app.get('/mcp', async (req: Request, res: Response) => {
-      const server = buildServer(client, logger, config);
-      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-      res.on('finish', () => { transport.close().catch(() => {}); });
-      await server.connect(transport);
-      await transport.handleRequest(req, res);
-    });
-
-    app.listen(config.httpPort, '0.0.0.0', () => {
-      const authMode = config.httpToken ? 'Bearer token' : 'no auth';
-      console.error(`mcp-ipm HTTP listening on :${config.httpPort} (${authMode})`);
-    });
+    app.listen(config.httpPort, '0.0.0.0');
   } else {
+    // Stdio mode (default)
     const server = buildServer(client, logger, config);
     const transport = new StdioServerTransport();
     await server.connect(transport);
